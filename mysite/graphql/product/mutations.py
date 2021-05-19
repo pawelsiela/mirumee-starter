@@ -1,39 +1,43 @@
-from itertools import product
-from typing_extensions import Required
+
 import graphene
 
 from .types import ProductType, ProductVariantType
 from ...product.models import Product, ProductVariant
 
+
 class ProductCreateInput(graphene.InputObjectType):
-    name = graphene.String(Required=True)
     price = graphene.Decimal(Required=True)
     description = graphene.String(Required=True)
     quantity = graphene.Int()
+
 
 class ProductCreate(graphene.Mutation):
     product = graphene.Field(ProductType)
 
 
 class ProductVariantCreateInput(graphene.InputObjectType):
-    product = graphene.String(Required=True)
-    name = graphene.String(Required=True)
-    sku = graphene.String(Required=True)
-    price = graphene.Decimal(Required=True)
+    product = graphene.String(required=True)
+    name = graphene.String(required=True)
+    sku = graphene.String(required=True)
+    price = graphene.Decimal(required=True)
+
 
 class ProductVariantCreate(graphene.Mutation):
-    product_variant = graphene.Field(ProductType)
+    product_variant = graphene.Field(ProductVariantType)
 
-    class Agguments:
-        input = ProductCreateInput(Required=True)
-        input = ProductVariantCreateInput(Required=True)
+    class Arguments:
+        input = ProductVariantCreateInput(required=True)
+        product_id = graphene.ID(required=True)
 
-    def clean_input(self, input):
-        return input
+    @classmethod
+    def clean_input(cls, data):
+        return data
+    @classmethod
+    def mutate(cls, root, info, input, product_id):
+        cleaned_input = cls.clean_input(input)
 
-    def mutate(self, root, info, input):
-        cleaned_input = self.clean_input(input)
-
-        product = Product.objects.create(**cleaned_input)
+        product = Product.objects.create(product=product_id,**cleaned_input)
 
         return ProductCreate(product=product)
+
+        
